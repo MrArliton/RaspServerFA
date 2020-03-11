@@ -1,5 +1,6 @@
 from socket import *
 from threadConnect import *
+import math
 class Server:
     sock = socket()
     connections = {}
@@ -54,14 +55,30 @@ class FileManager:
             for line in file:
                 a,b = line.split('-')
                 self.config.update({a.rstrip():b.rstrip()})
-    def getFileMan():
-        lock.acquire()
-    def releaseFileMan():
-        lock.release()
-    def openFile(path,mode):
-        if(lock.locked()):
-            return open(path,mode)
-        return 0
+    def getFileMan(self):
+        self.lock.acquire()
+    def releaseFileMan(self):
+        self.lock.release()
+    def getFile(self,path,length,sock):
+        with open(path,"wb+") as file:
+            if(file):
+                for i in range(math.ceil((float)(length)/4096)):
+                    print(i);
+                    if not(i==math.ceil((float)(length)/1024)):
+                        buff = sock.recv(4096)
+                    else:
+                        buff = sock.recv(length-file.tell());
+                    uncodingBytes(buff);
+                    file.write(buff);
+                    sock.send(b"okey");
+            buffer = sock.recv(8);
+            uncodingBytes(buffer);
+            if(buffer == 'SucClose'):
+                print("sucFile")
+            else:
+                print("NotSuc")
+        print("end");
+        #Принимаем файл
  #   def getCF():# Получения каталогов и файлов в общей директории
         
     def closeFile(file):
