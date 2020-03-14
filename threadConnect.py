@@ -1,6 +1,7 @@
 from threading import Thread
 from threading import Lock
 from faCoding import *
+import os
 import server
 class thConn(Thread):
     pauseT = False
@@ -27,14 +28,40 @@ class thConn(Thread):
     def command(command,flMan,sock): # Исполнение команд
         command = uncodingBytes(command)
         if(command == b'exit'):
-            sock.send(codingBytes(b'ok'))
+            sock.send(codingBytes(b'okey'))
             log("Закрываю соединение по команде",addr)
             server.connections.pop(addr)
             server.threads.pop(addr)
             sock.close()
             return 1
+        elif(command == b'DCIF'): # Удаление файла/каталога
+            sock.send(codingBytes(b'okey'))
+            path = uncodingBytes(sock.recv(256))# 256 Максимальный размер каталога
+            if(len(path) > 0):
+                print('DEL');
+                print(path);
+                if(os.path.isfile(path)):
+                    os.remove(path)
+                    sock.send(codingBytes(b'okey'))
+                else:
+                    sock.send(codingBytes(b'Exc1'))
         elif(command == b'CCIF'): # Принимаем каталог от сервера
-        
+            buff = codingBytes(b'okey');
+            sock.send(buff);
+            path = sock.recv(256);# Максимальный путь каталога 256
+            if(len(path)>0):
+                path = uncodingBytes(path);
+                # Тут создаём каталог
+                try:
+                    print(path)
+                    #### Потом выбрать права для доступа к файлу
+                    os.makedirs(path) # Makedirs для создание всего пути без дополнительных проверок
+                except OSError:
+                    sock.send(codingBytes(b'Exc1')); # Отправили подтверждение
+                    return 0
+                else:
+                    sock.send(buff); # Отправили подтверждение
+                    return 1
             return 1
         elif(command == b'FCIF'): # Принимаем файл от сервера
             path = sock.recv(256);
